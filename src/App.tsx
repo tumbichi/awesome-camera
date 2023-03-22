@@ -1,6 +1,9 @@
-import React from 'react';
+import 'react-native-reanimated';
+
+import React, {useEffect} from 'react';
 import {
-  Button,
+  ActivityIndicator,
+  // Button,
   SafeAreaView,
   StatusBar,
   StyleSheet,
@@ -8,6 +11,8 @@ import {
   useColorScheme,
   View,
 } from 'react-native';
+import {Camera, useCameraDevices} from 'react-native-vision-camera';
+import {useScanBarcodes, BarcodeFormat} from 'vision-camera-code-scanner';
 
 import {Colors} from 'react-native/Libraries/NewAppScreen';
 
@@ -17,6 +22,23 @@ function App(): JSX.Element {
   const backgroundStyle = {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
   };
+
+  const devices = useCameraDevices();
+  const device = devices.back;
+
+  const [frameProcessor, barcodes] = useScanBarcodes([BarcodeFormat.QR_CODE], {
+    checkInverted: true,
+  });
+  // const device = null;
+
+  // if () return <LoadingView />;
+
+  useEffect(() => {
+    (async () => {
+      const newCameraPermission = await Camera.requestCameraPermission();
+      console.log('newCameraPermission :>> ', newCameraPermission);
+    })();
+  }, []);
 
   return (
     <SafeAreaView style={backgroundStyle}>
@@ -34,13 +56,39 @@ function App(): JSX.Element {
           ]}>
           Awersome Camera
         </Text>
-        <View style={styles.content}></View>
+        {barcodes.map((barcode, idx) => {
+          console.log('barcode', barcode);
+          return (
+            <Text key={idx} style={styles.barcodeTextURL}>
+              {barcode.displayValue}
+            </Text>
+          );
+        })}
+        <View style={styles.content}>
+          {device == null ? (
+            <View>
+              <ActivityIndicator size="large" />
+            </View>
+          ) : (
+            <Camera
+              style={StyleSheet.absoluteFill}
+              device={device}
+              isActive={true}
+              frameProcessor={frameProcessor}
+              frameProcessorFps={5}></Camera>
+          )}
+        </View>
       </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  barcodeTextURL: {
+    fontSize: 20,
+    color: 'red',
+    fontWeight: 'bold',
+  },
   sectionContainer: {
     marginTop: 32,
     paddingHorizontal: 24,
